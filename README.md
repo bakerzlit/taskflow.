@@ -21,7 +21,7 @@ A beautiful, modern task management app with **AI-powered plan generation**. Cre
 
 ---
 
-## 📦 Getting Started
+## 📦 Getting Started (Local)
 
 ### Prerequisites
 
@@ -55,9 +55,24 @@ A beautiful, modern task management app with **AI-powered plan generation**. Cre
 
 5. **Open in browser**
 
-   Navigate to [http://localhost:8080/taskflow-ai.html](http://localhost:8080/taskflow-ai.html)
+   Navigate to [http://localhost:8080](http://localhost:8080)
 
-> **💡 Tip (Windows):** You can also just double-click `launch-taskflow.bat` to start the server and open the app automatically!
+> **💡 Tip (Windows):** Double-click `launch-taskflow.bat` to start the server and open the app automatically!
+
+---
+
+## ☁️ Deploy to Render
+
+1. Push this repo to GitHub
+2. Go to [render.com](https://render.com) → **New** → **Web Service**
+3. Connect your GitHub repo (`bakerzlit/taskflow`)
+4. Render will auto-detect settings from `render.yaml`, or configure manually:
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+5. Add environment variable: `GROQ_API_KEY` = your Groq API key
+6. Click **Deploy**
+
+Your app will be live at `https://taskflow-ai.onrender.com` (or your custom domain).
 
 ---
 
@@ -86,9 +101,10 @@ Powered by **Groq** using the **LLaMA 3.3 70B** model for fast, high-quality pla
 ## 📁 Project Structure
 
 ```
-taskflow-ai/
-├── taskflow-ai.html    # Main app (frontend)
+taskflow/
+├── index.html          # Main app (frontend)
 ├── server.js           # Express server & AI proxy
+├── render.yaml         # Render deployment config
 ├── .env                # API key (not tracked by git)
 ├── .gitignore          # Git exclusions
 ├── package.json        # Dependencies & scripts
