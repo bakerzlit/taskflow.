@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow AI</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #111210;
+      --surface: #1a1c19;
+      --surface2: #212420;
+      --border: #2a2d28;
+      --border2: #383c36;
+      --text: #e8ebe4;
+      --muted: #7a7e76;
+      --faint: #2e3129;
+      --green: #7cc47a;
+      --green-dim: rgba(124, 196, 122, 0.12);
+      --amber: #d4a84b;
+      --amber-dim: rgba(212, 168, 75, 0.12);
+      --red: #d46b6b;
+      --red-dim: rgba(212, 107, 107, 0.12);
+      --blue: #6b9fd4;
+      --blue-dim: rgba(107, 159, 212, 0.1);
+      --purple: #a78bfa;
+      --purple-dim: rgba(167, 139, 250, 0.1);
+    }
+
+    html {
+      font-size: 15px;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* HEADER */
+    header {
+      padding: 30px 0 24px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      animation: up 0.5s ease both;
+    }
+
+    .logo {
+      font-family: 'Instrument Serif', serif;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo em {
+      color: var(--green);
+      font-style: italic;
+    }
+
+    .logo sup {
+      font-size: 12px;
+      font-family: 'Outfit', sans-serif;
+      color: var(--purple);
+      font-style: normal;
+      vertical-align: super;
+      margin-left: 4px;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 24px;
+    }
+
+    .hstat {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .hstat strong {
+      display: block;
+      font-family: 'Instrument Serif', serif;
+      font-size: 22px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    /* REMINDER */
+    .reminder {
+      display: none;
+      margin: 18px 0 0;
+      background: var(--amber-dim);
+      border: 1px solid rgba(212, 168, 75, 0.2);
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 13px;
+      color: var(--amber);
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      animation: up 0.3s ease both;
+    }
+
+    .reminder.show {
+      display: flex;
+    }
+
+    .reminder:hover {
+      background: rgba(212, 168, 75, 0.18);
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin: 22px 0 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      animation: up 0.4s 0.05s ease both;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 9px 16px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--surface2);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* VIEWS */
+    .view {
+      display: none;
+      animation: up 0.3s ease both;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes up {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ADD BAR */
+    .add-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .add-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .add-input::placeholder {
+      color: var(--muted);
+    }
+
+    .add-input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-dim);
+    }
+
+    /* BUTTONS */
+    .btn {
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-green {
+      background: var(--green);
+      color: #0e1a0e;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .btn-green:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12.5px;
+      border-radius: 8px;
+      padding: 7px 13px;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--border2);
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .btn-ghost.danger:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .btn-ai {
+      background: var(--purple-dim);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      color: var(--purple);
+      font-size: 12.5px;
+      border-radius: 8px;
+      padding: 7px 13px;
+    }
+
+    .btn-ai:hover {
+      background: rgba(167, 139, 250, 0.18);
+    }
+
+    .btn-ai:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-sm {
+      padding: 7px 13px;
+      font-size: 12.5px;
+    }
+
+    /* TASK CARD */
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      animation: up 0.35s ease both;
+    }
+
+    .task-card:hover {
+      border-color: var(--border2);
+    }
+
+    .task-card.expanded {
+      border-color: var(--border2);
+      box-shadow: 0 4px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .task-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .task-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .task-check:hover {
+      border-color: var(--green);
+    }
+
+    .task-check.checked {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .task-check.checked::after {
+      content: '✓';
+      font-size: 12px;
+      color: #0e1a0e;
+      font-weight: 700;
+    }
+
+    .task-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-name {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    .task-check.checked~.task-info .task-name {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-sub {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mini-progress {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mini-bar {
+      width: 72px;
+      height: 4px;
+      background: var(--faint);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .mini-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .task-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    .tag-overdue {
+      background: var(--red-dim);
+      color: var(--red);
+    }
+
+    .tag-due-soon {
+      background: var(--amber-dim);
+      color: var(--amber);
+    }
+
+    .tag-on-track {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .tag-done {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .tag-no-date {
+      background: var(--faint);
+      color: var(--muted);
+    }
+
+    .expand-arr {
+      color: var(--muted);
+      font-size: 11px;
+      transition: transform 0.25s;
+    }
+
+    .task-card.expanded .expand-arr {
+      transform: rotate(180deg);
+    }
+
+    /* TASK BODY */
+    .task-body {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .task-card.expanded .task-body {
+      display: block;
+    }
+
+    .sec-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .notes-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px;
+      resize: vertical;
+      min-height: 72px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+
+    .notes-input::placeholder {
+      color: var(--muted);
+    }
+
+    .notes-input:focus {
+      border-color: var(--green);
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .meta-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .meta-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .meta-input:focus {
+      border-color: var(--green);
+    }
+
+    /* PROGRESS */
+    .prog-section {
+      margin: 18px 0 0;
+    }
+
+    .prog-bar {
+      height: 6px;
+      background: var(--faint);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), #9eda9c);
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .prog-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .cp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--blue-dim);
+      border: 1px solid rgba(107, 159, 212, 0.2);
+      color: var(--blue);
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .cp-badge:hover {
+      background: rgba(107, 159, 212, 0.18);
+    }
+
+    /* STEPS */
+    .steps-section {
+      margin-top: 20px;
+    }
+
+    .steps-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .steps-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+      min-height: 4px;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      transition: border-color 0.2s;
+      animation: up 0.25s ease both;
+    }
+
+    .step-row:hover {
+      border-color: var(--border2);
+    }
+
+    .step-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      margin-top: 1px;
+    }
+
+    .step-check:hover {
+      border-color: var(--green);
+    }
+
+    .step-check.done {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .step-check.done::after {
+      content: '✓';
+      font-size: 10px;
+      color: #0e1a0e;
+      font-weight: 700;
+    }
+
+    .step-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .step-text-main {
+      font-size: 13.5px;
+      color: var(--text);
+      transition: color 0.2s;
+    }
+
+    .step-text-main.done-text {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .step-due-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      font-size: 11.5px;
+      color: var(--blue);
+      background: var(--blue-dim);
+      border: 1px solid rgba(107, 159, 212, 0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .step-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .step-idx {
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-del {
+      background: none;
+      border: none;
+      color: var(--faint);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 2px 4px;
+      transition: color 0.15s;
+    }
+
+    .step-del:hover {
+      color: var(--red);
+    }
+
+    .add-step-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-step-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px dashed var(--border2);
+      border-radius: 9px;
+      padding: 9px 13px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .add-step-input::placeholder {
+      color: var(--faint);
+    }
+
+    .add-step-input:focus {
+      border-color: var(--green);
+      border-style: solid;
+    }
+
+    /* AI GENERATING STATE */
+    .ai-loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--purple-dim);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13.5px;
+      color: var(--purple);
+      margin-bottom: 12px;
+      animation: up 0.3s ease both;
+    }
+
+    .ai-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(167, 139, 250, 0.3);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* TASK ACTIONS */
+    .task-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* COMPLETED */
+    .completed-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0.7;
+      animation: up 0.3s ease both;
+    }
+
+    .done-icon {
+      width: 22px;
+      height: 22px;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #0e1a0e;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .done-name {
+      flex: 1;
+      font-size: 14px;
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .done-meta {
+      font-size: 11.5px;
+      color: var(--faint);
+    }
+
+    /* EMPTY */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 22px;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+
+    /* MODAL OVERLAY */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      padding: 28px;
+      max-width: 480px;
+      width: 100%;
+      animation: up 0.3s ease both;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal h2 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .modal p {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .modal-field {
+      margin-bottom: 14px;
+    }
+
+    .modal-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .modal-input:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px var(--purple-dim);
+    }
+
+    .modal-input::placeholder {
+      color: var(--muted);
+    }
+
+    .modal-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .btn-purple {
+      background: var(--purple);
+      color: #1a1033;
+      padding: 10px 22px;
+      font-size: 14px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-purple:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-purple:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="logo">Task<em>Flow</em><sup>AI</sup></div>
+      <div class="header-stats">
+        <div class="hstat"><strong id="h-pending">0</strong>Pending</div>
+        <div class="hstat"><strong id="h-done">0</strong>Done</div>
+        <div class="hstat"><strong id="h-total">0</strong>Total</div>
+      </div>
+    </header>
+
+    <div class="reminder" id="reminder" onclick="this.classList.remove('show')">
+      <span>🔔</span><span id="reminderText"></span>
+      <span style="margin-left:auto;font-size:11px;opacity:0.6">Dismiss</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('active')">Active</button>
+      <button class="tab" onclick="switchTab('completed')">Completed</button>
+    </div>
+
+    <div class="view active" id="view-active">
+      <div class="add-bar">
+        <input class="add-input" id="newTaskInput" placeholder="New task… press Enter to add" />
+        <button class="btn btn-green" onclick="addTask()">+ Add</button>
+      </div>
+      <div id="taskList"></div>
+    </div>
+
+    <div class="view" id="view-completed">
+      <div id="completedList"></div>
+    </div>
+  </div>
+
+  <!-- AI PLAN MODAL -->
+  <div class="modal-overlay hidden" id="aiModal">
+    <div class="modal">
+      <h2>✨ AI Plan Generator</h2>
+      <p>Tell AI about your task and deadline — it will create logical steps with dates automatically distributed
+        across your available time.</p>
+      <div class="modal-field">
+        <label class="modal-label">Task description</label>
+        <input class="modal-input" id="aiTaskDesc"
+          placeholder="e.g. Build a portfolio website, Study for biology exam…" />
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label class="modal-label">Start date</label>
+          <input class="modal-input" type="date" id="aiStart" />
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Deadline</label>
+          <input class="modal-input" type="date" id="aiDeadline" />
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Extra context <span
+            style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="modal-input" id="aiContext"
+          placeholder="e.g. Beginner level, working part-time, need buffer days…" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeAiModal()">Cancel</button>
+        <button class="btn-purple" id="aiGenerateBtn" onclick="generatePlan()">✨ Generate Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── STORAGE ──────────────────────────────────────────────────
+    const STORE = 'taskflow_ai_v1';
+    let DB = (() => { try { return JSON.parse(localStorage.getItem(STORE)) || { tasks: [], checkpoints: {} }; } catch { return { tasks: [], checkpoints: {} }; } })();
+    const save = () => localStorage.setItem(STORE, JSON.stringify(DB));
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    // ─── STATUS ───────────────────────────────────────────────────
+    function taskStatus(t) {
+      if (t.done) return 'done';
+      if (!t.due) return 'no-date';
+      const d = new Date(t.due); d.setHours(23, 59, 59, 999);
+      const diff = (d - new Date()) / 86400000;
+      if (diff < 0) return 'overdue';
+      if (diff <= 2) return 'due-soon';
+      return 'on-track';
+    }
+
+    const STATUS_LABEL = { overdue: 'Overdue', 'due-soon': 'Due soon', 'on-track': 'On track', done: 'Done', 'no-date': 'No date' };
+
+    function progressOf(t) {
+      if (!t.steps?.length) return t.done ? 100 : 0;
+      return Math.round(t.steps.filter(s => s.done).length / t.steps.length * 100);
+    }
+
+    // ─── REMINDER ─────────────────────────────────────────────────
+    function checkReminders() {
+      const active = DB.tasks.filter(t => !t.done);
+      const ov = active.filter(t => taskStatus(t) === 'overdue');
+      const soon = active.filter(t => taskStatus(t) === 'due-soon');
+      let msg = ov.length ? `${ov.length} task${ov.length > 1 ? 's' : ''} overdue — take action!`
+        : soon.length ? `${soon.length} task${soon.length > 1 ? 's' : ''} due within 2 days.`
+          : '';
+      const el = document.getElementById('reminder');
+      if (msg) { document.getElementById('reminderText').textContent = msg; el.classList.add('show'); }
+      else { el.classList.remove('show'); }
+    }
+
+    // ─── RENDER ───────────────────────────────────────────────────
+    function render() {
+      renderActive(); renderCompleted(); renderHeader(); checkReminders();
+    }
+
+    function renderHeader() {
+      document.getElementById('h-pending').textContent = DB.tasks.filter(t => !t.done).length;
+      document.getElementById('h-done').textContent = DB.tasks.filter(t => t.done).length;
+      document.getElementById('h-total').textContent = DB.tasks.length;
+    }
+
+    function renderActive() {
+      const list = document.getElementById('taskList');
+      const active = DB.tasks.filter(t => !t.done);
+      if (!active.length) {
+        list.innerHTML = `<div class="empty"><div class="empty-title">Nothing here yet.</div><div>Add a task above — or let AI plan it for you.</div></div>`;
+        return;
+      }
+      const ord = { overdue: 0, 'due-soon': 1, 'on-track': 2, 'no-date': 3 };
+      active.sort((a, b) => (ord[taskStatus(a)] || 4) - (ord[taskStatus(b)] || 4));
+      list.innerHTML = active.map(cardHTML).join('');
+    }
+
+    function cardHTML(t) {
+      const s = taskStatus(t);
+      const pct = progressOf(t);
+      const due = t.due ? new Date(t.due).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      const done = t.steps?.filter(x => x.done).length || 0;
+      const tot = t.steps?.length || 0;
+      const cp = DB.checkpoints[t.id];
+
+      return `
+<div class="task-card" id="card-${t.id}">
+  <div class="task-header" onclick="toggleExpand('${t.id}')">
+    <div class="task-check ${t.done ? 'checked' : ''}" onclick="event.stopPropagation();toggleTask('${t.id}')"></div>
+    <div class="task-info">
+      <div class="task-name">${t.name}</div>
+      <div class="task-sub">
+        ${due ? `<span>📅 ${due}</span>` : ''}
+        ${tot > 0 ? `<span class="mini-progress"><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div><span>${done}/${tot}</span></span>` : ''}
+        ${t.aiGenerated ? `<span style="color:var(--purple);font-size:11px;">✨ AI planned</span>` : ''}
+      </div>
+    </div>
+    <div class="task-right">
+      <span class="tag tag-${s}">${STATUS_LABEL[s] || s}</span>
+      <span class="expand-arr">▼</span>
+    </div>
+  </div>
+
+  <div class="task-body" id="body-${t.id}">
+    <div class="sec-label">Notes</div>
+    <textarea class="notes-input" placeholder="Add notes…" oninput="saveField('${t.id}','notes',this.value)">${t.notes || ''}</textarea>
+
+    <div class="meta-row">
+      <div class="meta-field">
+        <div class="meta-label">Due date</div>
+        <input class="meta-input" type="date" value="${t.due || ''}" onchange="saveField('${t.id}','due',this.value);render()"/>
+      </div>
+      <div class="meta-field">
+        <div class="meta-label">Priority</div>
+        <select class="meta-input" onchange="saveField('${t.id}','priority',this.value)">
+          <option value="normal" ${(t.priority || 'normal') === 'normal' ? 'selected' : ''}>Normal</option>
+          <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+          <option value="urgent" ${t.priority === 'urgent' ? 'selected' : ''}>Urgent</option>
+        </select>
+      </div>
+    </div>
+
+    ${tot > 0 ? `
+    <div class="prog-section">
+      <div class="sec-label">Progress — ${pct}% complete</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-${t.id}" style="width:${pct}%"></div></div>
+      <div class="prog-meta">
+        <span>${done} of ${tot} steps complete</span>
+        ${cp ? `<span class="cp-badge" onclick="showCheckpoint('${t.id}')">📌 Checkpoint · ${new Date(cp.time).toLocaleDateString()}</span>` : ''}
+      </div>
+    </div>` : ''}
+
+    <div class="steps-section">
+      <div class="steps-head">
+        <div class="sec-label" style="margin:0">Steps & Checkpoints</div>
+        <div class="steps-actions">
+          <button class="btn btn-ai" onclick="openAiModal('${t.id}','${escapeAttr(t.name)}')">✨ AI Plan</button>
+          <button class="btn btn-ghost btn-sm" onclick="saveCheckpoint('${t.id}')">📌 Checkpoint</button>
+        </div>
+      </div>
+
+      <div class="steps-list" id="steps-${t.id}">
+        ${(t.steps || []).map((step, i) => stepHTML(t.id, step, i)).join('')}
+      </div>
+
+      <div class="add-step-row">
+        <input class="add-step-input" id="si-${t.id}" placeholder="Add a step manually…" onkeydown="if(event.key==='Enter')addStep('${t.id}')"/>
+        <button class="btn btn-ghost btn-sm" onclick="addStep('${t.id}')">+ Step</button>
+      </div>
+    </div>
+
+    <div class="task-actions">
+      <button class="btn btn-ghost danger btn-sm" onclick="deleteTask('${t.id}')">Delete</button>
+      <button class="btn btn-green btn-sm" onclick="toggleTask('${t.id}')">Mark complete</button>
+    </div>
+  </div>
+</div>`;
+    }
+
+    function stepHTML(tid, step, i) {
+      return `<div class="step-row" id="step-${tid}-${step.id}">
+    <div class="step-check ${step.done ? 'done' : ''}" onclick="toggleStep('${tid}','${step.id}')"></div>
+    <div class="step-content">
+      <div class="step-text-main ${step.done ? 'done-text' : ''}">${step.text}</div>
+      ${step.dueDate ? `<div class="step-due-badge">📅 ${new Date(step.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>` : ''}
+    </div>
+    <div class="step-right">
+      <span class="step-idx">${i + 1}</span>
+      <button class="step-del" onclick="deleteStep('${tid}','${step.id}')">×</button>
+    </div>
+  </div>`;
+    }
+
+    function renderCompleted() {
+      const list = document.getElementById('completedList');
+      const done = DB.tasks.filter(t => t.done);
+      if (!done.length) {
+        list.innerHTML = `<div class="empty"><div class="empty-title">Nothing yet.</div><div>Completed tasks will appear here.</div></div>`;
+        return;
+      }
+      list.innerHTML = done.map(t => `
+    <div class="completed-card">
+      <div class="done-icon">✓</div>
+      <div class="done-name">${t.name}</div>
+      <div class="done-meta">${t.steps?.length ? t.steps.length + ' steps' : ''}</div>
+      <button class="btn btn-ghost btn-sm" onclick="undoTask('${t.id}')">Restore</button>
+    </div>`).join('');
+    }
+
+    // ─── TASK ACTIONS ─────────────────────────────────────────────
+    function addTask() {
+      const inp = document.getElementById('newTaskInput');
+      const name = inp.value.trim(); if (!name) return;
+      DB.tasks.unshift({ id: uid(), name, notes: '', due: '', priority: 'normal', done: false, steps: [], created: new Date().toISOString() });
+      save(); render(); inp.value = '';
+    }
+    document.getElementById('newTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+    function toggleTask(id) {
+      const t = DB.tasks.find(x => x.id === id); if (!t) return;
+      t.done = !t.done;
+      if (t.done) t.completedAt = new Date().toISOString();
+      save(); render();
+    }
+
+    function undoTask(id) {
+      const t = DB.tasks.find(x => x.id === id);
+      if (t) { t.done = false; delete t.completedAt; save(); render(); }
+    }
+
+    function deleteTask(id) {
+      if (!confirm('Delete this task?')) return;
+      DB.tasks = DB.tasks.filter(x => x.id !== id);
+      delete DB.checkpoints[id];
+      save(); render();
+    }
+
+    function toggleExpand(id) {
+      document.getElementById('card-' + id)?.classList.toggle('expanded');
+    }
+
+    function saveField(id, field, val) {
+      const t = DB.tasks.find(x => x.id === id);
+      if (t) { t[field] = val; save(); }
+    }
+
+    // ─── STEPS ────────────────────────────────────────────────────
+    function addStep(tid, text, dueDate) {
+      const inp = document.getElementById('si-' + tid);
+      const txt = text || inp?.value.trim(); if (!txt) return;
+      const t = DB.tasks.find(x => x.id === tid); if (!t) return;
+      if (!t.steps) t.steps = [];
+      t.steps.push({ id: uid(), text: txt, done: false, dueDate: dueDate || '' });
+      save(); refreshSteps(tid);
+      if (inp) inp.value = '';
+    }
+
+    function toggleStep(tid, sid) {
+      const t = DB.tasks.find(x => x.id === tid); if (!t) return;
+      const s = t.steps.find(x => x.id === sid); if (!s) return;
+      s.done = !s.done; save(); refreshSteps(tid);
+    }
+
+    function deleteStep(tid, sid) {
+      const t = DB.tasks.find(x => x.id === tid); if (!t) return;
+      t.steps = t.steps.filter(x => x.id !== sid); save(); refreshSteps(tid);
+    }
+
+    function refreshSteps(tid) {
+      const t = DB.tasks.find(x => x.id === tid); if (!t) return;
+      const sl = document.getElementById('steps-' + tid);
+      if (sl) sl.innerHTML = (t.steps || []).map((s, i) => stepHTML(tid, s, i)).join('');
+      const pct = progressOf(t);
+      const done = t.steps?.filter(s => s.done).length || 0;
+      const tot = t.steps?.length || 0;
+      const pf = document.getElementById('prog-' + tid);
+      if (pf) pf.style.width = pct + '%';
+      const mf = document.querySelector(`#card-${tid} .mini-fill`);
+      if (mf) mf.style.width = pct + '%';
+      const mc = document.querySelector(`#card-${tid} .mini-progress span`);
+      if (mc) mc.textContent = `${done}/${tot}`;
+      // Re-render full card if progress section needs to appear for first time
+      if (tot > 0 && !document.getElementById('prog-' + tid)) render();
+      renderHeader();
+    }
+
+    // ─── CHECKPOINTS ──────────────────────────────────────────────
+    function saveCheckpoint(tid) {
+      const t = DB.tasks.find(x => x.id === tid); if (!t) return;
+      DB.checkpoints[tid] = { time: new Date().toISOString(), progress: progressOf(t), snapshot: JSON.parse(JSON.stringify(t.steps || [])) };
+      save();
+      const badge = document.querySelector(`#body-${tid} .cp-badge`);
+      const meta = document.querySelector(`#body-${tid} .prog-meta`);
+      if (meta && !badge) {
+        const b = document.createElement('span');
+        b.className = 'cp-badge'; b.textContent = '📌 Checkpoint saved'; b.onclick = () => showCheckpoint(tid);
+        meta.appendChild(b);
+      }
+      alert('Checkpoint saved at ' + progressOf(t) + '% progress.');
+    }
+
+    function showCheckpoint(tid) {
+      const cp = DB.checkpoints[tid]; if (!cp) return;
+      const done = cp.snapshot.filter(s => s.done).map(s => '  · ' + s.text);
+      alert(`Checkpoint — ${new Date(cp.time).toLocaleString()}\nProgress: ${cp.progress}%\n${done.length ? '\nCompleted steps:\n' + done.join('\n') : ''}`);
+    }
+
+    // ─── AI MODAL ─────────────────────────────────────────────────
+    let aiTargetTaskId = null;
+
+    function openAiModal(tid, name) {
+      aiTargetTaskId = tid;
+      document.getElementById('aiTaskDesc').value = name;
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('aiStart').value = today;
+      document.getElementById('aiDeadline').value = '';
+      document.getElementById('aiContext').value = '';
+      document.getElementById('aiModal').classList.remove('hidden');
+    }
+
+    function closeAiModal() {
+      document.getElementById('aiModal').classList.add('hidden');
+      aiTargetTaskId = null;
+    }
+
+    document.getElementById('aiModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('aiModal')) closeAiModal();
+    });
+
+    async function generatePlan() {
+      const desc = document.getElementById('aiTaskDesc').value.trim();
+      const start = document.getElementById('aiStart').value;
+      const deadline = document.getElementById('aiDeadline').value;
+      const context = document.getElementById('aiContext').value.trim();
+
+      if (!desc) { alert('Please enter a task description.'); return; }
+      if (!deadline) { alert('Please set a deadline.'); return; }
+      if (!start) { alert('Please set a start date.'); return; }
+      if (new Date(deadline) <= new Date(start)) { alert('Deadline must be after start date.'); return; }
+
+      const btn = document.getElementById('aiGenerateBtn');
+      btn.disabled = true; btn.textContent = '⏳ Generating…';
+
+      const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const startFmt = new Date(start).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const endFmt = new Date(deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const days = Math.round((new Date(deadline) - new Date(start)) / 86400000);
+
+      const prompt = `Today is ${today}. I need a step-by-step plan for the following task:
+
+Task: ${desc}
+Start date: ${startFmt}
+Deadline: ${endFmt}
+Available days: ${days} days
+${context ? `Extra context: ${context}` : ''}
+
+Generate a logical, ordered list of steps to complete this task. For each step:
+1. Write a clear, actionable step description (one sentence)
+2. Assign a specific due date between ${startFmt} and ${endFmt} — distribute them proportionally based on the complexity and dependencies of each step
+3. Earlier steps should be simpler/preparatory; later steps more complex/final
+
+Respond ONLY with valid JSON — no markdown, no explanation, just the raw JSON array:
+[
+  { "text": "Step description", "dueDate": "YYYY-MM-DD" },
+  ...
+]
+
+Generate between 5 and 10 steps. Be practical and specific to the task.`;
+
+      try {
+        const res = await fetch('/api/ai-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+
+        const data = await res.json();
+        const raw = data.content?.map(b => b.text || '').join('').trim();
+
+        // Strip any accidental markdown fences
+        const clean = raw.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+        const steps = JSON.parse(clean);
+
+        if (!Array.isArray(steps) || !steps.length) throw new Error('Empty response');
+
+        const t = DB.tasks.find(x => x.id === aiTargetTaskId);
+        if (t) {
+          t.steps = steps.map(s => ({ id: uid(), text: s.text, done: false, dueDate: s.dueDate || '' }));
+          t.due = deadline;
+          t.aiGenerated = true;
+          save();
+        }
+
+        closeAiModal();
+        render();
+        // Auto-expand the card
+        setTimeout(() => {
+          const card = document.getElementById('card-' + aiTargetTaskId);
+          if (card && !card.classList.contains('expanded')) card.classList.add('expanded');
+        }, 100);
+
+      } catch (err) {
+        console.error(err);
+        alert('AI plan generation failed. Please check your connection and try again.\n\nError: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '✨ Generate Plan';
+      }
+    }
+
+    // ─── ADD TASK WITH AI shortcut ────────────────────────────────
+    // If user types and hits the AI button from empty state, open modal directly
+    function addAndPlan() {
+      const inp = document.getElementById('newTaskInput');
+      const name = inp.value.trim();
+      if (!name) { alert('Type a task name first.'); return; }
+      addTask();
+      const newest = DB.tasks[0];
+      if (newest) openAiModal(newest.id, newest.name);
+    }
+
+    // ─── TABS ─────────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['active', 'completed'][i] === name));
+      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+    }
+
+    // ─── UTILS ────────────────────────────────────────────────────
+    function escapeAttr(s) { return (s || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+
+    // ─── INIT ─────────────────────────────────────────────────────
+    render();
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      setTimeout(() => Notification.requestPermission(), 2000);
+    }
+    setTimeout(() => {
+      const ov = DB.tasks.filter(t => !t.done && taskStatus(t) === 'overdue');
+      if (ov.length && Notification.permission === 'granted') {
+        new Notification('TaskFlow', { body: `${ov.length} task${ov.length > 1 ? 's' : ''} overdue.` });
+      }
+    }, 1500);
+  </script>
+</body>
+
+</html>
